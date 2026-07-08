@@ -52,11 +52,12 @@ export interface Purchase {
 }
 
 export interface SiteConfig {
-  [key: string]: string;
-}
-
-export interface ApiResponse<T> {
-  data?: T;
-  error?: string;
-  code?: string;
+  site_name?: string;
+  whatsapp_number?: string;
+  whatsapp_enabled?: string;
+  bank_transfer_enabled?: string;
+  bank_name?: string;
+  account_holder?: string;
+  cbu?: string;
+  alias?: string;
 }

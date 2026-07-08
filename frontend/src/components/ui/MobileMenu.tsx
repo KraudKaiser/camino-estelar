@@ -4,10 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, MessageCircle } from "lucide-react";
-
-const navLinks = [
-  { href: "/servicios", label: "Servicios" },
-];
+import { NAV_LINKS, WHATSAPP_PHONE } from "@/lib/constants";
 
 export default function MobileMenu() {
   const [open, setOpen] = useState(false);
@@ -51,7 +48,7 @@ export default function MobileMenu() {
               </button>
             </div>
             <nav className="space-y-2">
-              {navLinks.map((link) => (
+              {NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -65,7 +62,7 @@ export default function MobileMenu() {
                 </Link>
               ))}
               <a
-                href="https://wa.me/5491112345678"
+                href={`https://wa.me/${WHATSAPP_PHONE}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-lg text-success hover:bg-success/10 transition-colors duration-300"

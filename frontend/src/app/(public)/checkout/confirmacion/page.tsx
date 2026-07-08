@@ -5,8 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
 import { MessageCircle, ArrowRight, Copy, Check } from "lucide-react";
-import { API_URL } from "@/lib/api";
+import { getPurchase } from "@/lib/api";
 import { Purchase } from "@/lib/types";
+import { WHATSAPP_PHONE, BANK_TRANSFER_DETAILS } from "@/lib/constants";
 import Spinner from "@/components/ui/Spinner";
 
 function ConfirmationContent() {
@@ -24,9 +25,8 @@ function ConfirmationContent() {
       return;
     }
 
-    fetch(`${API_URL}/api/purchases/${purchaseId}`)
-      .then((res) => res.json())
-      .then((data) => setPurchase(data.purchase))
+    getPurchase(purchaseId)
+      .then(setPurchase)
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [purchaseId, router]);
@@ -54,17 +54,15 @@ function ConfirmationContent() {
   }
 
   const getWhatsAppLink = () => {
-    const phone = "5491112345678";
     const message = encodeURIComponent(
       `Hola! Realice una compra de "${purchase.service?.name}". Mi nombre es ${purchase.customerName}. Quisiera coordinar mi sesion.`
     );
-    return `https://wa.me/${phone}?text=${message}`;
+    return `https://wa.me/${WHATSAPP_PHONE}?text=${message}`;
   };
 
   return (
     <div className="bg-surface-900 pt-24 sm:pt-32 min-h-screen">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        {/* Success Animation */}
         <div className="text-center mb-8">
           <div className="relative w-20 h-20 mx-auto mb-6">
             <div className="absolute inset-0 bg-success/20 rounded-full animate-ping opacity-20" />
@@ -84,7 +82,6 @@ function ConfirmationContent() {
           </p>
         </div>
 
-        {/* Order Summary */}
         <div className="card-dark p-6 sm:p-8 mb-6">
           <h2 className="font-display text-lg font-semibold text-text-primary mb-4">
             Resumen de tu compra
@@ -122,7 +119,6 @@ function ConfirmationContent() {
           </div>
         </div>
 
-        {/* Bank Transfer Instructions */}
         {purchase.paymentMethod === "BANK_TRANSFER" && (
           <div className="card-dark p-6 sm:p-8 mb-6 border-accent/20">
             <h3 className="font-display text-lg font-semibold text-accent mb-4">
@@ -131,18 +127,18 @@ function ConfirmationContent() {
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-text-secondary text-sm">Banco</span>
-                <span className="text-text-primary">Banco Nacion</span>
+                <span className="text-text-primary">{BANK_TRANSFER_DETAILS.bankName}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-text-secondary text-sm">Titular</span>
-                <span className="text-text-primary">Camino Estelar S.R.L.</span>
+                <span className="text-text-primary">{BANK_TRANSFER_DETAILS.accountHolder}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-text-secondary text-sm">CBU</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-text-primary font-mono text-sm">0110123432101234567890</span>
+                  <span className="text-text-primary font-mono text-sm">{BANK_TRANSFER_DETAILS.cbu}</span>
                   <button
-                    onClick={() => handleCopy("0110123432101234567890")}
+                    onClick={() => handleCopy(BANK_TRANSFER_DETAILS.cbu)}
                     className="text-text-muted hover:text-accent transition-colors"
                   >
                     {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
@@ -152,9 +148,9 @@ function ConfirmationContent() {
               <div className="flex justify-between items-center">
                 <span className="text-text-secondary text-sm">Alias</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-text-primary font-mono">CAMINOESTELAR</span>
+                  <span className="text-text-primary font-mono">{BANK_TRANSFER_DETAILS.alias}</span>
                   <button
-                    onClick={() => handleCopy("CAMINOESTELAR")}
+                    onClick={() => handleCopy(BANK_TRANSFER_DETAILS.alias)}
                     className="text-text-muted hover:text-accent transition-colors"
                   >
                     {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
@@ -170,7 +166,6 @@ function ConfirmationContent() {
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4">
           <a
             href={getWhatsAppLink()}

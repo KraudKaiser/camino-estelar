@@ -6,10 +6,7 @@ import { usePathname } from "next/navigation";
 import { MessageCircle } from "lucide-react";
 import MobileMenu from "@/components/ui/MobileMenu";
 import WhatsAppButton from "@/components/ui/WhatsAppButton";
-
-const navLinks = [
-  { href: "/servicios", label: "Servicios" },
-];
+import { NAV_LINKS, WHATSAPP_PHONE } from "@/lib/constants";
 
 export default function PublicLayout({
   children,
@@ -41,7 +38,7 @@ export default function PublicLayout({
             </Link>
 
             <nav className="hidden lg:flex items-center gap-8">
-              {navLinks.map((link) => (
+              {NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -55,7 +52,7 @@ export default function PublicLayout({
                 </Link>
               ))}
               <a
-                href="https://wa.me/5491112345678"
+                href={`https://wa.me/${WHATSAPP_PHONE}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-sm font-medium text-success hover:text-success/80 transition-colors duration-300"
@@ -87,15 +84,17 @@ export default function PublicLayout({
             <div>
               <h4 className="text-text-primary font-semibold mb-4">Navegacion</h4>
               <nav className="space-y-2">
-                <Link href="/servicios" className="block text-text-secondary hover:text-text-primary text-sm transition-colors">
-                  Servicios
-                </Link>
+                {NAV_LINKS.map((link) => (
+                  <Link key={link.href} href={link.href} className="block text-text-secondary hover:text-text-primary text-sm transition-colors">
+                    {link.label}
+                  </Link>
+                ))}
               </nav>
             </div>
             <div>
               <h4 className="text-text-primary font-semibold mb-4">Contacto</h4>
               <a
-                href="https://wa.me/5491112345678"
+                href={`https://wa.me/${WHATSAPP_PHONE}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-text-secondary hover:text-success text-sm transition-colors"

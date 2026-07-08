@@ -3,11 +3,24 @@
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Service } from "@/lib/types";
-import { API_URL } from "@/lib/api";
+import { getAdminServices, createService, updateService, deleteService } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Spinner from "@/components/ui/Spinner";
 import Badge from "@/components/ui/Badge";
+
+interface ServiceFormData {
+  name: string;
+  description: string;
+  shortDesc: string;
+  price: number;
+  originalPrice: number | null;
+  duration: number;
+  imageUrl: string;
+  isActive: boolean;
+  sortOrder: number;
+  features: string[];
+}
 
 export default function AdminServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
@@ -20,28 +33,29 @@ export default function AdminServicesPage() {
   }, []);
 
   const fetchServices = async () => {
-    const res = await fetch(`${API_URL}/api/admin/services`, { credentials: "include" });
-    const data = await res.json();
-    setServices(data.services || []);
-    setLoading(false);
+    try {
+      const data = await getAdminServices();
+      setServices(data);
+    } catch {
+      setServices([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Eliminar este servicio?")) return;
-    await fetch(`${API_URL}/api/admin/services/${id}`, { method: "DELETE", credentials: "include" });
+    await deleteService(id);
     fetchServices();
   };
 
-  const handleSave = async (formData: any) => {
-    const url = editing
-      ? `${API_URL}/api/admin/services/${editing.id}`
-      : `${API_URL}/api/admin/services`;
-    await fetch(url, {
-      method: editing ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(formData),
-    });
+  const handleSave = async (formData: ServiceFormData) => {
+    const payload = { ...formData } as unknown as Partial<Service>;
+    if (editing) {
+      await updateService(editing.id, payload);
+    } else {
+      await createService(payload as Omit<Service, "id" | "createdAt" | "updatedAt">);
+    }
     setShowForm(false);
     setEditing(null);
     fetchServices();
@@ -105,29 +119,28 @@ export default function AdminServicesPage() {
   );
 }
 
-function ServiceForm({ service, onSave, onCancel }: { service: Service | null; onSave: (data: any) => void; onCancel: () => void }) {
-  const [formData, setFormData] = useState({
+function ServiceForm({ service, onSave, onCancel }: { service: Service | null; onSave: (data: ServiceFormData) => void; onCancel: () => void }) {
+  const [formData, setFormData] = useState<ServiceFormData>({
     name: service?.name || "",
     description: service?.description || "",
     shortDesc: service?.shortDesc || "",
-    price: String(service?.price || 0),
-    originalPrice: service?.originalPrice != null ? String(service.originalPrice) : "",
-    duration: String(service?.duration || 30),
+    price: Number(service?.price) || 0,
+    originalPrice: service?.originalPrice != null ? Number(service.originalPrice) : null,
+    duration: Number(service?.duration) || 30,
     imageUrl: service?.imageUrl || "",
     isActive: service?.isActive ?? true,
-    sortOrder: String(service?.sortOrder || 0),
-    features: service?.features?.map((f) => f.text).join("\n") || "",
+    sortOrder: service?.sortOrder || 0,
+    features: service?.features?.map((f) => f.text) || [],
   });
+  const [featuresText, setFeaturesText] = useState(
+    service?.features?.map((f) => f.text).join("\n") || ""
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave({
       ...formData,
-      price: Number(formData.price),
-      originalPrice: formData.originalPrice ? Number(formData.originalPrice) : null,
-      duration: Number(formData.duration),
-      sortOrder: Number(formData.sortOrder) || 0,
-      features: formData.features.split("\n").filter((f) => f.trim()),
+      features: featuresText.split("\n").filter((f) => f.trim()),
     });
   };
 
@@ -139,9 +152,9 @@ function ServiceForm({ service, onSave, onCancel }: { service: Service | null; o
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid sm:grid-cols-2 gap-4">
           <Input label="Nombre *" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
-          <Input label="Precio *" type="number" required value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} />
-          <Input label="Precio Original" type="number" value={formData.originalPrice} onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })} />
-          <Input label="Duracion (min) *" type="number" required value={formData.duration} onChange={(e) => setFormData({ ...formData, duration: e.target.value })} />
+          <Input label="Precio *" type="number" required value={formData.price} onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })} />
+          <Input label="Precio Original" type="number" value={formData.originalPrice ?? ""} onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value ? Number(e.target.value) : null })} />
+          <Input label="Duracion (min) *" type="number" required value={formData.duration} onChange={(e) => setFormData({ ...formData, duration: Number(e.target.value) })} />
         </div>
         <Input label="Descripcion Corta" value={formData.shortDesc} onChange={(e) => setFormData({ ...formData, shortDesc: e.target.value })} />
         <div className="space-y-1.5">
@@ -150,7 +163,7 @@ function ServiceForm({ service, onSave, onCancel }: { service: Service | null; o
         </div>
         <div className="space-y-1.5">
           <label className="block text-sm font-medium text-text-secondary">Features (una por linea)</label>
-          <textarea rows={4} value={formData.features} onChange={(e) => setFormData({ ...formData, features: e.target.value })} className="input-dark resize-none" placeholder="Feature 1&#10;Feature 2" />
+          <textarea rows={4} value={featuresText} onChange={(e) => setFeaturesText(e.target.value)} className="input-dark resize-none" placeholder="Feature 1&#10;Feature 2" />
         </div>
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} className="w-4 h-4 rounded bg-surface-700 border-surface-600 text-accent focus:ring-accent" />

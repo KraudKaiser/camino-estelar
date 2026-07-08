@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Save } from "lucide-react";
-import { API_URL } from "@/lib/api";
+import { getAdminConfig, updateAdminConfig } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Spinner from "@/components/ui/Spinner";
@@ -16,23 +16,27 @@ export default function AdminConfigPage() {
   useEffect(() => { fetchConfig(); }, []);
 
   const fetchConfig = async () => {
-    const res = await fetch(`${API_URL}/api/admin/config`, { credentials: "include" });
-    const data = await res.json();
-    setConfig(data.config || {});
-    setLoading(false);
+    try {
+      const data = await getAdminConfig();
+      setConfig(data);
+    } catch {
+      setConfig({});
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSave = async () => {
     setSaving(true);
     setMessage("");
-    await fetch(`${API_URL}/api/admin/config`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ config }),
-    });
-    setMessage("Configuracion guardada");
-    setSaving(false);
+    try {
+      await updateAdminConfig(config);
+      setMessage("Configuracion guardada");
+    } catch {
+      setMessage("Error al guardar");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const updateConfig = (key: string, value: string) => {
@@ -81,7 +85,7 @@ export default function AdminConfigPage() {
         </div>
 
         {message && (
-          <div className="bg-success/10 border border-success/30 text-success p-4 rounded-xl text-sm">
+          <div className={`${message.includes("Error") ? "bg-error/10 border-error/30 text-error" : "bg-success/10 border-success/30 text-success"} border p-4 rounded-xl text-sm`}>
             {message}
           </div>
         )}

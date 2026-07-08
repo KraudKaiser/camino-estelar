@@ -6,6 +6,7 @@ import {
   purchaseConfirmationEmail,
   adminNotificationEmail,
 } from "../services/email.service";
+import { validateCouponForService } from "../services/coupon.service";
 import { logger } from "../utils/logger";
 
 export async function createPurchase(req: Request, res: Response) {
@@ -34,28 +35,10 @@ export async function createPurchase(req: Request, res: Response) {
   let couponId: string | undefined;
 
   if (couponCode) {
-    const coupon = await prisma.coupon.findUnique({
-      where: { code: couponCode.toUpperCase() },
-    });
-
-    if (coupon && coupon.isActive) {
-      const now = new Date();
-      if (now >= coupon.validFrom && now <= coupon.validUntil) {
-        if (!coupon.maxUses || coupon.usedCount < coupon.maxUses) {
-          if (
-            !coupon.minPurchase ||
-            Number(service.price) >= Number(coupon.minPurchase)
-          ) {
-            if (coupon.discountType === "PERCENTAGE") {
-              discountAmount =
-                (Number(service.price) * Number(coupon.discountValue)) / 100;
-            } else {
-              discountAmount = Number(coupon.discountValue);
-            }
-            couponId = coupon.id;
-          }
-        }
-      }
+    const result = await validateCouponForService(couponCode, serviceId);
+    if (result.valid) {
+      discountAmount = result.discount!;
+      couponId = result.couponId;
     }
   }
 
@@ -85,7 +68,6 @@ export async function createPurchase(req: Request, res: Response) {
     });
   }
 
-  // Send emails
   const emailData = {
     customerName,
     serviceName: service.name,
@@ -94,13 +76,11 @@ export async function createPurchase(req: Request, res: Response) {
     purchaseId: purchase.id,
   };
 
-  // Send confirmation to customer
   await sendEmail({
     ...purchaseConfirmationEmail(emailData),
     to: customerEmail,
   });
 
-  // Notify admin
   await sendEmail(
     adminNotificationEmail({
       customerName,
@@ -141,31 +121,4 @@ export async function getPurchase(req: Request, res: Response) {
   }
 
   res.json({ purchase });
-}
-
-export async function uploadProof(req: Request, res: Response) {
-  const id = String(req.params.id);
-
-  const purchase = await prisma.purchase.findUnique({
-    where: { id },
-  });
-
-  if (!purchase) {
-    throw new NotFoundError("Purchase");
-  }
-
-  if (purchase.paymentMethod !== "BANK_TRANSFER") {
-    throw new ValidationError("This purchase does not accept bank transfer");
-  }
-
-  // In MVP, we'll just store a placeholder URL
-  // In production, handle file upload with multer
-  const proofUrl = req.body.proofUrl || "proof-uploaded";
-
-  const updated = await prisma.purchase.update({
-    where: { id },
-    data: { bankTransferProof: proofUrl },
-  });
-
-  res.json({ purchase: updated });
 }

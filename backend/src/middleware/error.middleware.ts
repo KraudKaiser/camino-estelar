@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { AppError, handleZodError } from "../utils/errors";
+import { AppError } from "../utils/errors";
 import { Prisma } from "@prisma/client";
 import { logger } from "../utils/logger";
 

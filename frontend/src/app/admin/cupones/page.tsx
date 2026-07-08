@@ -3,11 +3,22 @@
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Coupon } from "@/lib/types";
-import { API_URL } from "@/lib/api";
+import { getAdminCoupons, createCoupon, updateCoupon, deleteCoupon } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Spinner from "@/components/ui/Spinner";
 import Badge from "@/components/ui/Badge";
+
+interface CouponFormData {
+  code: string;
+  discountType: "PERCENTAGE" | "FIXED";
+  discountValue: number;
+  minPurchase: number | null;
+  maxUses: number | null;
+  validFrom: string;
+  validUntil: string;
+  isActive: boolean;
+}
 
 export default function AdminCouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -18,26 +29,28 @@ export default function AdminCouponsPage() {
   useEffect(() => { fetchCoupons(); }, []);
 
   const fetchCoupons = async () => {
-    const res = await fetch(`${API_URL}/api/admin/coupons`, { credentials: "include" });
-    const data = await res.json();
-    setCoupons(data.coupons || []);
-    setLoading(false);
+    try {
+      const data = await getAdminCoupons();
+      setCoupons(data);
+    } catch {
+      setCoupons([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Eliminar este cupon?")) return;
-    await fetch(`${API_URL}/api/admin/coupons/${id}`, { method: "DELETE", credentials: "include" });
+    await deleteCoupon(id);
     fetchCoupons();
   };
 
-  const handleSave = async (formData: any) => {
-    const url = editing ? `${API_URL}/api/admin/coupons/${editing.id}` : `${API_URL}/api/admin/coupons`;
-    await fetch(url, {
-      method: editing ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(formData),
-    });
+  const handleSave = async (formData: CouponFormData) => {
+    if (editing) {
+      await updateCoupon(editing.id, formData);
+    } else {
+      await createCoupon(formData as Omit<Coupon, "id" | "createdAt" | "updatedAt" | "usedCount">);
+    }
     setShowForm(false);
     setEditing(null);
     fetchCoupons();
@@ -109,13 +122,13 @@ export default function AdminCouponsPage() {
   );
 }
 
-function CouponForm({ coupon, onSave, onCancel }: { coupon: Coupon | null; onSave: (data: any) => void; onCancel: () => void }) {
-  const [formData, setFormData] = useState({
+function CouponForm({ coupon, onSave, onCancel }: { coupon: Coupon | null; onSave: (data: CouponFormData) => void; onCancel: () => void }) {
+  const [formData, setFormData] = useState<CouponFormData>({
     code: coupon?.code || "",
     discountType: coupon?.discountType || "PERCENTAGE",
     discountValue: coupon?.discountValue || 10,
-    minPurchase: coupon?.minPurchase != null ? String(coupon.minPurchase) : "",
-    maxUses: coupon?.maxUses != null ? String(coupon.maxUses) : "",
+    minPurchase: coupon?.minPurchase != null ? Number(coupon.minPurchase) : null,
+    maxUses: coupon?.maxUses != null ? Number(coupon.maxUses) : null,
     validFrom: coupon?.validFrom ? new Date(coupon.validFrom).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
     validUntil: coupon?.validUntil ? new Date(coupon.validUntil).toISOString().split("T")[0] : "",
     isActive: coupon?.isActive ?? true,
@@ -123,12 +136,7 @@ function CouponForm({ coupon, onSave, onCancel }: { coupon: Coupon | null; onSav
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
-      ...formData,
-      discountValue: Number(formData.discountValue),
-      minPurchase: formData.minPurchase ? Number(formData.minPurchase) : null,
-      maxUses: formData.maxUses ? Number(formData.maxUses) : null,
-    });
+    onSave(formData);
   };
 
   return (
@@ -147,8 +155,8 @@ function CouponForm({ coupon, onSave, onCancel }: { coupon: Coupon | null; onSav
             </select>
           </div>
           <Input label="Valor del Descuento *" type="number" required value={formData.discountValue} onChange={(e) => setFormData({ ...formData, discountValue: Number(e.target.value) })} />
-          <Input label="Compra Minima" type="number" value={formData.minPurchase} onChange={(e) => setFormData({ ...formData, minPurchase: e.target.value })} />
-          <Input label="Maximo de Usos" type="number" value={formData.maxUses} onChange={(e) => setFormData({ ...formData, maxUses: e.target.value })} />
+          <Input label="Compra Minima" type="number" value={formData.minPurchase ?? ""} onChange={(e) => setFormData({ ...formData, minPurchase: e.target.value ? Number(e.target.value) : null })} />
+          <Input label="Maximo de Usos" type="number" value={formData.maxUses ?? ""} onChange={(e) => setFormData({ ...formData, maxUses: e.target.value ? Number(e.target.value) : null })} />
           <Input label="Fecha Fin *" type="date" required value={formData.validUntil} onChange={(e) => setFormData({ ...formData, validUntil: e.target.value })} />
         </div>
         <label className="flex items-center gap-2 cursor-pointer">

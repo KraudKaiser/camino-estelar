@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Clock, CheckCircle, MessageCircle, ArrowLeft } from "lucide-react";
 import { getService, getServices } from "@/lib/api";
+import { WHATSAPP_PHONE } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -107,7 +108,7 @@ export default async function ServiceDetailPage({
               Contratar Servicio
             </Link>
             <a
-              href={`https://wa.me/5491112345678?text=${encodeURIComponent(`Hola! Me interesa el servicio: ${service.name}. Quisiera mas informacion.`)}`}
+              href={`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(`Hola! Me interesa el servicio: ${service.name}. Quisiera mas informacion.`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-secondary text-lg flex-1 text-center"

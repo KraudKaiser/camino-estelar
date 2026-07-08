@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Purchase } from "@/lib/types";
-import { API_URL } from "@/lib/api";
+import { getAdminPurchases, updatePurchaseStatus } from "@/lib/api";
+import { PAYMENT_METHOD_LABELS, PAYMENT_STATUS_CONFIG } from "@/lib/constants";
 import Spinner from "@/components/ui/Spinner";
 import Badge from "@/components/ui/Badge";
 
@@ -13,38 +14,24 @@ export default function AdminPurchasesPage() {
   useEffect(() => { fetchPurchases(); }, []);
 
   const fetchPurchases = async () => {
-    const res = await fetch(`${API_URL}/api/admin/purchases`, { credentials: "include" });
-    const data = await res.json();
-    setPurchases(data.purchases || []);
-    setLoading(false);
+    try {
+      const data = await getAdminPurchases();
+      setPurchases(data);
+    } catch {
+      setPurchases([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateStatus = async (id: string, status: string) => {
-    await fetch(`${API_URL}/api/admin/purchases/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ paymentStatus: status }),
-    });
+    await updatePurchaseStatus(id, status);
     fetchPurchases();
   };
 
   if (loading) {
     return <div className="flex items-center justify-center py-20"><Spinner size="lg" /></div>;
   }
-
-  const paymentMethodLabels: Record<string, string> = {
-    MERCADOPAGO: "MercadoPago",
-    BANK_TRANSFER: "Transferencia",
-    WHATSAPP_ONLY: "WhatsApp",
-  };
-
-  const statusConfig: Record<string, { label: string; variant: "success" | "warning" | "error" | "default" }> = {
-    PENDING: { label: "Pendiente", variant: "warning" },
-    COMPLETED: { label: "Completada", variant: "success" },
-    FAILED: { label: "Fallida", variant: "error" },
-    CANCELLED: { label: "Cancelada", variant: "default" },
-  };
 
   return (
     <div>
@@ -79,11 +66,11 @@ export default function AdminPurchasesPage() {
                     ${Number(purchase.finalPrice).toLocaleString("es-AR")}
                   </td>
                   <td className="px-5 py-4 text-text-secondary text-sm">
-                    {paymentMethodLabels[purchase.paymentMethod] || purchase.paymentMethod}
+                    {PAYMENT_METHOD_LABELS[purchase.paymentMethod] || purchase.paymentMethod}
                   </td>
                   <td className="px-5 py-4">
-                    <Badge variant={statusConfig[purchase.paymentStatus]?.variant || "default"}>
-                      {statusConfig[purchase.paymentStatus]?.label || purchase.paymentStatus}
+                    <Badge variant={PAYMENT_STATUS_CONFIG[purchase.paymentStatus]?.variant || "default"}>
+                      {PAYMENT_STATUS_CONFIG[purchase.paymentStatus]?.label || purchase.paymentStatus}
                     </Badge>
                   </td>
                   <td className="px-5 py-4 text-right">

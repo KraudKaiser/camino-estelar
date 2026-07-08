@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Package, ShoppingCart, DollarSign, Clock, ArrowRight } from "lucide-react";
-import { API_URL } from "@/lib/api";
+import { getAdminServices, getAdminPurchases } from "@/lib/api";
+import { Service, Purchase } from "@/lib/types";
 import Spinner from "@/components/ui/Spinner";
 
 interface Stats {
@@ -23,21 +24,18 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      fetch(`${API_URL}/api/admin/services`, { credentials: "include" }).then((res) => res.json()),
-      fetch(`${API_URL}/api/admin/purchases`, { credentials: "include" }).then((res) => res.json()),
-    ])
-      .then(([servicesData, purchasesData]) => {
-        const purchases = purchasesData.purchases || [];
+    Promise.all([getAdminServices(), getAdminPurchases()])
+      .then(([services, purchases]) => {
         setStats({
-          totalServices: servicesData.services?.length || 0,
+          totalServices: services.length,
           totalPurchases: purchases.length,
           totalRevenue: purchases
-            .filter((p: any) => p.paymentStatus === "COMPLETED")
-            .reduce((sum: number, p: any) => sum + Number(p.finalPrice), 0),
-          pendingPayments: purchases.filter((p: any) => p.paymentStatus === "PENDING").length,
+            .filter((p: Purchase) => p.paymentStatus === "COMPLETED")
+            .reduce((sum: number, p: Purchase) => sum + Number(p.finalPrice), 0),
+          pendingPayments: purchases.filter((p: Purchase) => p.paymentStatus === "PENDING").length,
         });
       })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
@@ -69,7 +67,6 @@ export default function AdminDashboard() {
         Dashboard
       </h1>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {statCards.map((stat) => (
           <div key={stat.label} className="card-dark p-5">
@@ -84,7 +81,6 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Quick Links */}
       <h2 className="font-display text-lg font-semibold text-text-primary mb-4">
         Accesos Rapidos
       </h2>

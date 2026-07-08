@@ -1,12 +1,13 @@
 "use client";
 
 import { MessageCircle } from "lucide-react";
+import { WHATSAPP_PHONE } from "@/lib/constants";
 
 interface WhatsAppButtonProps {
   phone?: string;
 }
 
-export default function WhatsAppButton({ phone = "5491112345678" }: WhatsAppButtonProps) {
+export default function WhatsAppButton({ phone = WHATSAPP_PHONE }: WhatsAppButtonProps) {
   const message = encodeURIComponent("Hola! Me gustaria obtener mas informacion sobre sus servicios.");
   const url = `https://wa.me/${phone}?text=${message}`;
 

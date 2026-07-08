@@ -1,23 +1,11 @@
 import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { asyncHandler } from "../utils/asyncHandler";
-import {
-  login,
-  logout,
-  getMe,
-  getServices,
-  createService,
-  updateService,
-  deleteService,
-  getCoupons,
-  createCoupon,
-  updateCoupon,
-  deleteCoupon,
-  getPurchases,
-  updatePurchase,
-  getConfig,
-  updateConfig,
-} from "../controllers/admin.controller";
+import { login, logout, getMe } from "../controllers/admin/auth.controller";
+import { getServices, createService, updateService, deleteService } from "../controllers/admin/service.controller";
+import { getCoupons, createCoupon, updateCoupon, deleteCoupon } from "../controllers/admin/coupon.controller";
+import { getPurchases, updatePurchase } from "../controllers/admin/purchase.controller";
+import { getConfig, updateConfig } from "../controllers/admin/config.controller";
 
 const router = Router();
 

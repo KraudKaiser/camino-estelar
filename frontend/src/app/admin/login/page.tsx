@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { API_URL } from "@/lib/api";
+import { adminLogin } from "@/lib/api";
 import { Lock, Mail } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -20,25 +20,13 @@ export default function AdminLoginPage() {
     setError("");
 
     try {
-      const res = await fetch(`${API_URL}/api/admin/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Credenciales invalidas");
-      }
-
-      const data = await res.json();
+      const data = await adminLogin(email, password);
       if (data.token) {
         localStorage.setItem("admin_token", data.token);
       }
-
       router.push("/admin");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Credenciales invalidas");
     } finally {
       setLoading(false);
     }

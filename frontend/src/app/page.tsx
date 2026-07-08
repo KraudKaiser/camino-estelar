@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MessageCircle, Clock, Star, Shield } from "lucide-react";
 import { getServices } from "@/lib/api";
 import { Service } from "@/lib/types";
+import { WHATSAPP_PHONE } from "@/lib/constants";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 
 export const dynamic = "force-dynamic";
@@ -40,7 +41,7 @@ export default async function Home() {
               Ver Servicios
             </Link>
             <a
-              href="https://wa.me/5491112345678"
+              href={`https://wa.me/${WHATSAPP_PHONE}`}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-secondary text-lg"
@@ -159,7 +160,7 @@ export default async function Home() {
                 Ver Servicios
               </Link>
               <a
-                href="https://wa.me/5491112345678"
+              href={`https://wa.me/${WHATSAPP_PHONE}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-secondary text-lg"

@@ -12,6 +12,7 @@ import serviceRoutes from "./routes/service.routes";
 import purchaseRoutes from "./routes/purchase.routes";
 import couponRoutes from "./routes/coupon.routes";
 import adminRoutes from "./routes/admin.routes";
+import configRoutes from "./routes/config.routes";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -20,7 +21,7 @@ const PORT = process.env.PORT || 4000;
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  origin: (process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, ""),
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
@@ -63,19 +64,7 @@ app.use("/api/services", serviceRoutes);
 app.use("/api/purchases", purchaseRoutes);
 app.use("/api/coupons", couponRoutes);
 app.use("/api/admin", adminRoutes);
-
-// Config endpoint
-app.get("/api/config/whatsapp", async (_req, res) => {
-  const { prisma } = await import("./utils/prisma");
-  const configs = await prisma.siteConfig.findMany({
-    where: { key: { in: ["whatsapp_number", "whatsapp_enabled"] } },
-  });
-  const config = configs.reduce(
-    (acc, { key, value }) => ({ ...acc, [key]: value }),
-    {} as Record<string, string>
-  );
-  res.json(config);
-});
+app.use("/api/config", configRoutes);
 
 // Error handler
 app.use(errorHandler);
