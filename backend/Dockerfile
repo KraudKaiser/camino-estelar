@@ -25,7 +25,11 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/src/prisma/seed.ts ./src/prisma/seed.ts
+COPY --from=builder /app/start.sh ./start.sh
+
+RUN chmod +x start.sh
 
 EXPOSE 4000
 
-CMD ["npm", "start"]
+CMD ["./start.sh"]
