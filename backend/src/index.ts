@@ -14,6 +14,7 @@ import couponRoutes from "./routes/coupon.routes";
 import adminRoutes from "./routes/admin.routes";
 
 const app = express();
+app.set("trust proxy", 1);
 const PORT = process.env.PORT || 4000;
 
 // Middleware
