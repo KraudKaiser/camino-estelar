@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { prisma } from "../utils/prisma";
 import { ValidationError, UnauthorizedError } from "../utils/errors";
 import { AuthRequest } from "../middleware/auth.middleware";
+import { logger } from "../utils/logger";
 
 export async function login(req: Request, res: Response) {
   const { email, password } = req.body;
@@ -17,11 +18,13 @@ export async function login(req: Request, res: Response) {
   });
 
   if (!admin) {
+    logger.warn("Login failed: unknown email", { email });
     throw new UnauthorizedError("Invalid credentials");
   }
 
   const valid = await bcrypt.compare(password, admin.passwordHash);
   if (!valid) {
+    logger.warn("Login failed: wrong password", { email });
     throw new UnauthorizedError("Invalid credentials");
   }
 
@@ -35,6 +38,8 @@ export async function login(req: Request, res: Response) {
     sameSite: "none",
     maxAge: 24 * 60 * 60 * 1000,
   });
+
+  logger.info("Login success", { email, adminId: admin.id });
 
   res.json({ token, admin: { id: admin.id, email: admin.email, name: admin.name } });
 }

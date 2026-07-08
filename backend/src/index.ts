@@ -1,12 +1,13 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import { errorHandler } from "./middleware/error.middleware";
+import { logger } from "./utils/logger";
 import serviceRoutes from "./routes/service.routes";
 import purchaseRoutes from "./routes/purchase.routes";
 import couponRoutes from "./routes/coupon.routes";
@@ -17,9 +18,30 @@ const PORT = process.env.PORT || 4000;
 
 // Middleware
 app.use(helmet());
-app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:3000", credentials: true }));
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 app.use(express.json());
 app.use(cookieParser());
+
+// Request logging
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const start = Date.now();
+  const originalEnd = res.end;
+  res.end = function (...args: any[]) {
+    const duration = Date.now() - start;
+    logger.info("Request", {
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      duration: `${duration}ms`,
+    });
+    return (originalEnd as any).apply(this, args);
+  };
+  next();
+});
 
 // Rate limiting
 const limiter = rateLimit({
@@ -58,7 +80,14 @@ app.get("/api/config/whatsapp", async (_req, res) => {
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  logger.info("Server started", {
+    port: PORT,
+    nodeEnv: process.env.NODE_ENV || "development",
+    frontendUrl: process.env.FRONTEND_URL || "NOT SET",
+    hasJwtSecret: !!process.env.JWT_SECRET,
+    hasMpToken: !!process.env.MERCADOPAGO_ACCESS_TOKEN,
+    hasSmtp: !!process.env.SMTP_HOST,
+  });
 });
 
 export default app;

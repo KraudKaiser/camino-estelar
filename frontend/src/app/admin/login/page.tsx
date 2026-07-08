@@ -31,6 +31,11 @@ export default function AdminLoginPage() {
         throw new Error("Credenciales invalidas");
       }
 
+      const data = await res.json();
+      if (data.token) {
+        localStorage.setItem("admin_token", data.token);
+      }
+
       router.push("/admin");
     } catch (err: any) {
       setError(err.message);

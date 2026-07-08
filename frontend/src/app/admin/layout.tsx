@@ -33,12 +33,27 @@ export default function AdminLayout({
       return;
     }
 
-    fetch(`${API_URL}/api/admin/me`, { credentials: "include" })
+    const token = localStorage.getItem("admin_token");
+    if (!token) {
+      router.push("/admin/login");
+      setLoading(false);
+      return;
+    }
+
+    fetch(`${API_URL}/api/admin/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
       .then((res) => {
         if (res.ok) setAuthenticated(true);
-        else router.push("/admin/login");
+        else {
+          localStorage.removeItem("admin_token");
+          router.push("/admin/login");
+        }
       })
-      .catch(() => router.push("/admin/login"))
+      .catch(() => {
+        localStorage.removeItem("admin_token");
+        router.push("/admin/login");
+      })
       .finally(() => setLoading(false));
   }, [router, isLoginPage, pathname]);
 
@@ -116,10 +131,8 @@ export default function AdminLayout({
           </a>
           <button
             onClick={async () => {
-              await fetch(`${API_URL}/api/admin/logout`, {
-                method: "POST",
-                credentials: "include",
-              });
+              localStorage.removeItem("admin_token");
+              await fetch(`${API_URL}/api/admin/logout`, { method: "POST" });
               router.push("/admin/login");
             }}
             className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-text-secondary hover:text-error hover:bg-error/10 transition-all duration-300 w-full"

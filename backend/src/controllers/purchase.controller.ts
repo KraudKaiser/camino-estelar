@@ -6,6 +6,7 @@ import {
   purchaseConfirmationEmail,
   adminNotificationEmail,
 } from "../services/email.service";
+import { logger } from "../utils/logger";
 
 export async function createPurchase(req: Request, res: Response) {
   const {
@@ -115,6 +116,14 @@ export async function createPurchase(req: Request, res: Response) {
     // TODO: Integrate with MercadoPago SDK
     paymentUrl = `https://www.mercadopago.com/checkout/v1/redirect?pref_id=${purchase.id}`;
   }
+
+  logger.info("Purchase created", {
+    purchaseId: purchase.id,
+    service: service.name,
+    amount: Number(finalPrice),
+    paymentMethod,
+    customerEmail,
+  });
 
   res.status(201).json({ purchase, paymentUrl });
 }
