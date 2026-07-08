@@ -1,0 +1,44 @@
+services:
+  - type: pgsql
+    name: camino-estelar-db
+    plan: free
+    databaseName: camino_estelar
+    user: camino_estelar
+
+  - type: web
+    name: camino-estelar-api
+    runtime: docker
+    plan: free
+    dockerFilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: camino-estelar-db
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false
+      - key: MERCADOPAGO_ACCESS_TOKEN
+        sync: false
+      - key: MERCADOPAGO_PUBLIC_KEY
+        sync: false
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: WHATSAPP_NUMBER
+        sync: false
+      - key: PORT
+        value: "4000"
+    healthCheckPath: /api/health
+    autoDeploy: true
